@@ -1,0 +1,14 @@
+{
+  "itemGroup.cliinstallmod": "Example Mod Tab",
+
+  "cliinstallmod.configuration.title": "cliinstallmod Configs",
+  "cliinstallmod.configuration.section.cliinstallmod.common.toml": "cliinstallmod Configs",
+  "cliinstallmod.configuration.section.cliinstallmod.common.toml.title": "cliinstallmod Configs",
+  "cliinstallmod.configuration.items": "Item List",
+  "cliinstallmod.configuration.logDirtBlock": "Log Dirt Block",
+  "cliinstallmod.configuration.magicNumberIntroduction": "Magic Number Text",
+  "cliinstallmod.configuration.magicNumber": "Magic Number",
+
+  "key.cliinstallmod.open_ui": "Open UI",
+  "key.categories.cliinstallmod": "CLI Install Mod"
+}
