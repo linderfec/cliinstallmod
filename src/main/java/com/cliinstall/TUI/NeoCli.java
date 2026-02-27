@@ -254,9 +254,37 @@ public class NeoCli {
     }
 
     /**
+     * 获取当前 Minecraft 版本
+     */
+    private static String getMcVersion() {
+        // 使用 SharedConstants 获取真实的 MC 版本号，格式如 "1.21.8"
+        return net.minecraft.SharedConstants.getCurrentVersion().id();
+    }
+
+    /**
+     * 检查版本是否匹配当前 MC 版本
+     * 支持精确匹配和前缀匹配（如 "1.21.8" 匹配 "1.21.x" 或 "1.21"）
+     */
+    private static boolean matchesMcVersion(String gameVersion, String currentVersion) {
+        if (gameVersion.equals(currentVersion)) {
+            return true;
+        }
+        // 支持模糊版本匹配，如 "1.21.x" 匹配 "1.21.8"
+        if (gameVersion.endsWith(".x") || gameVersion.endsWith("-")) {
+            String prefix = gameVersion.replaceAll("[.x-]+$", ".");
+            return currentVersion.startsWith(prefix);
+        }
+        return false;
+    }
+
+    /**
      * 从 Modrinth 下载模组
      */
     public static String downloadModrinthMod(String projectId) throws IOException {
+        // 获取当前 MC 版本
+        String mcVersion = getMcVersion();
+        sendClientMessage("§7当前 MC 版本: " + mcVersion);
+
         // 获取项目版本列表
         String urlStr = MODRINTH_API + "/project/" + projectId + "/version";
         String response = httpRequest(urlStr);
@@ -266,24 +294,43 @@ public class NeoCli {
             return "§c未找到可用版本";
         }
 
-        // 查找适合 NeoForge 的版本
+        // 查找适合当前 MC 版本和 NeoForge 的版本
         JsonObject targetVersion = null;
         for (int i = 0; i < versions.size(); i++) {
             JsonObject version = versions.get(i).getAsJsonObject();
             JsonArray loaders = version.getAsJsonArray("loaders");
+            JsonArray gameVersions = version.getAsJsonArray("game_versions");
             
+            // 检查是否为 NeoForge 加载器
+            boolean isNeoForge = false;
             for (int j = 0; j < loaders.size(); j++) {
                 if ("neoforge".equals(loaders.get(j).getAsString())) {
-                    targetVersion = version;
+                    isNeoForge = true;
                     break;
                 }
             }
-            if (targetVersion != null) break;
+            
+            if (!isNeoForge) continue;
+            
+            // 检查是否匹配当前 MC 版本
+            boolean matchesVersion = false;
+            for (int j = 0; j < gameVersions.size(); j++) {
+                String gv = gameVersions.get(j).getAsString();
+                if (matchesMcVersion(gv, mcVersion)) {
+                    matchesVersion = true;
+                    break;
+                }
+            }
+            
+            if (matchesVersion) {
+                targetVersion = version;
+                break;
+            }
         }
 
-        // 如果没找到 NeoForge 版本，使用第一个版本
+        // 如果没找到匹配版本，提示用户
         if (targetVersion == null) {
-            targetVersion = versions.get(0).getAsJsonObject();
+            return "§c未找到适合 MC " + mcVersion + " 和 NeoForge 的版本§r\n§7该模组可能不支持当前版本，请检查模组页面§r";
         }
 
         // 获取下载信息
